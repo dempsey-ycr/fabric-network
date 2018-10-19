@@ -85,6 +85,7 @@ services:
         - ../protobuf/projects/go/protocol/:/opt/gopath/src/protobuf/projects/go/protocol/
         - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
         - ./scripts:/opt/gopath/src/github.com/hyperledger/fabric/peer/scripts/
+        # - ./sign-chaincode-pack.out:/opt/gopath/src/github.com/hyperledger/fabric/peer/
         - ./channel-artifacts:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts
     depends_on:
       - orderer.example.com

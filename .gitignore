@@ -1,0 +1,5 @@
+chainData/
+crypto-config/
+channel-artifacts/*
+chainData_*/
+log.txt

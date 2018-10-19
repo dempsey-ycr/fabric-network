@@ -131,21 +131,6 @@ installChaincode() {
   echo
 }
 
-packageAndSign(){
-  PACK_NAME="chaincode-pack.out"
-  SIGN_PACK_NAME="sign-chaincode-pack.out"
-
-  set -x
-  peer chaincode package $PACK_NAME -n byfn -v ${VERSION} -s -S -p ${CC_IHT_PATH} >&log.txt
-  peer chaincode signpackage $PACK_NAME $SIGN_PACK_NAME
-  res=$?
-  set +x
-  cat log.txt
-  verifyResult $res "Chaincode package-and-sign has failed"
-  echo "===================== Chaincode is packaged and signed in tmp ===================== "
-  echo
-}
-
 instantiateChaincode() {
   PEER=$1
   ORG=$2
