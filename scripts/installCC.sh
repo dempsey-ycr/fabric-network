@@ -12,7 +12,8 @@ TIMEOUT=10
 DELAY=3
 readonly PACK_NAME="chaincode-pack.out"
 readonly SIGN_PACK_NAME="sign-$CC_NAME-$CC_VERSION.out"
-readonly CC_PATH="fabric-network/chaincode/go/dempsey_ycr/go"
+readonly CC_PATH="chaincode/app/verse"
+# readonly CC_PATH="fabric-network/chaincode/go/dempsey_ycr/go"
 
 # packaging chaincode
 packageChaincode(){
@@ -123,11 +124,38 @@ chaincodeInvoke() {
   if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
     set -x
     peer chaincode invoke -o orderer.example.com:7050 -C $CHANNEL_NAME -n $CC_NAME $PEER_CONN_PARMS -c '{"Args":["invoke","a","b","10"]}' >&log.txt
+    # peer chaincode invoke -o orderer.example.com:7050 -C $CHANNEL_NAME -n $CC_NAME $PEER_CONN_PARMS -c '{"Args":["testWrite","key","123"]}' >&log.txt
     res=$?
     set +x
   else
     set -x
-    peer chaincode invoke -o orderer.example.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n $CC_NAME $PEER_CONN_PARMS -c '{"Args":["invoke","a","b","10"]}' >&log.txt res=$?
+    peer chaincode invoke -o orderer.example.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n $CC_NAME $PEER_CONN_PARMS -c '{"Args":["invoke","a","b","10"]}'>&log.txt res=$?
+    # peer chaincode invoke -o orderer.example.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n $CC_NAME $PEER_CONN_PARMS -c '{"Args":["testWrite","key","123"]}' >&log.txt res=$?
+    set +x
+  fi
+  cat log.txt
+  verifyResult $res "Invoke execution on $PEERS failed "
+  echo "===================== Invoke transaction successful on $PEERS on channel '$CHANNEL_NAME' ===================== "
+  echo
+}
+
+initchaincode() {
+   parsePeerConnectionParameters $@
+  res=$?
+  verifyResult $res "Initialize chaincode failed on channel '$CHANNEL_NAME' due to uneven number of peer and org parameters "
+
+  # while 'peer chaincode' command can get the orderer endpoint from the
+  # peer (if join was successful), let's supply it directly as we know
+  # it using the "-o" option
+  if [ -z "$CORE_PEER_TLS_ENABLED" -o "$CORE_PEER_TLS_ENABLED" = "false" ]; then
+    set -x
+    peer chaincode invoke -o orderer.example.com:7050 -C $CHANNEL_NAME -n byfn $PEER_CONN_PARMS -c '{"Args":["init","a","b","10"]}' >&log.txt
+    res=$?
+    set +x
+  else
+    set -x
+    peer chaincode invoke -o orderer.example.com:7050 --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA -C $CHANNEL_NAME -n byfn $PEER_CONN_PARMS -c '{"Args":["init","a","b","10"]}' >&log.txt
+    res=$?
     set +x
   fi
   cat log.txt
@@ -154,9 +182,10 @@ chaincodeQuery() {
     echo "Attempting to Query peer${PEER}.org${ORG} ...$(($(date +%s) - starttime)) secs"
     set -x
     peer chaincode query -C $CHANNEL_NAME -n $CC_NAME -c '{"Args":["query","a"]}' >&log.txt
+    # peer chaincode query -C $CHANNEL_NAME -n $CC_NAME -c '{"Args":["testRead","key"]}' >&log.txt
     res=$?
     set +x
-    test $res -eq 0 && VALUE=$(cat log.txt | awk '/Query Result/ {print $NF}')
+    test $res -eq "123" && VALUE=$(cat log.txt | awk '/Query Result/ {print $NF}')
     test "$VALUE" = "$EXPECTED_RESULT" && let rc=0
     # removed the string "Query Result" from peer chaincode query command
     # result. as a result, have to support both options until the change
@@ -187,31 +216,64 @@ else
   echo "Signature chaincode..."
   signChaincode
 
-  # install
-  echo "Install chaincode on top three peer..."
-  installChaincode 0 1
-  installChaincode 1 1
-  installChaincode 0 2
+## Install chaincode on peer0.org1 and peer0.org2
+echo "Installing chaincode on peer0.org1..."
+installChaincode 0 1
 
-  # instantiate
-  echo "Instantiate chaincode on peer0 org1"
-  instantiateChaincode 0 1
+echo "Installling chaincode on peer0.org2..."
+installChaincode 0 2
 
-  # querying
-  echo "Querying chaincode on peer0.org1..."
-  chaincodeQuery 0 1 100
+# Instantiate chaincode on peer0.org2
+echo "Instantiating chaincode on peer0.org2..."
+instantiateChaincode 0 2
 
-  # Invoke chaincode on peer0.org1 and peer0.org2
-  echo "Sending invoke transaction on peer0.org1 peer0.org2..."
-  chaincodeInvoke 0 1 0 2
+# Query chaincode on peer0.org1
+echo "Querying chaincode on peer0.org1..."
+chaincodeQuery 0 1 100
+
+# Invoke chaincode on peer0.org1 and peer0.org2
+echo "Sending invoke transaction on peer0.org1 peer0.org2..."
+chaincodeInvoke 0 1 0 2
+
+## Install chaincode on peer1.org2
+echo "Installing chaincode on peer1.org1 and peer1.org2..."
+installChaincode 1 1
+installChaincode 1 2
 
 
-  # Install chaincode on peer1 org2
-  installChaincode 1 2
+# Query on chaincode on peer1.org2, check if the result is 90
+echo "Querying chaincode on peer1.org2..."
+chaincodeQuery 1 2 90
 
-  # Query on chaincode on peer1.org2, check if the result is 90
-  echo "Querying chaincode on peer1.org2..."
-  chaincodeQuery 1 2 90
+# init chaincode
+echo "initialize chaincode on peer0.org2..."
+initchaincode 0 1 0 2
+
+# ##---------
+#   # install
+#   echo "Install chaincode on top three peer..."
+#   installChaincode 0 1
+#   installChaincode 1 1
+#   installChaincode 0 2
+#   installChaincode 1 2
+
+#   # instantiate
+#   echo "Instantiate chaincode on peer0 org1"
+#   instantiateChaincode 0 2
+
+
+#   # Invoke chaincode on peer0.org1 and peer0.org2
+#   echo "Sending invoke transaction on peer0.org1 peer0.org2..."
+#   chaincodeInvoke 0 1 0 2
+
+
+#   # Query on chaincode on peer1.org2, check if the result is 90
+#   echo "Querying chaincode on peer1.org2..."
+#   chaincodeQuery 1 2 90
+
+#   # init chaincode
+#   echo "initialize chaincode on peer0.org2..."
+#   initchaincode 0 1 0 2
 
   echo
   echo "========= All GOOD, Install chaincode and test completed =========== "

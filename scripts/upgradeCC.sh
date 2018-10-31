@@ -26,17 +26,19 @@ packageChaincode
 echo "Signature chaincode..."
 signChaincode
 
-# install
-echo "Install chaincode on top three peer..."
+
+## Install chaincode on peer0.org1 and peer0.org2
+echo "Installing chaincode on peer0.org1..."
 installChaincode 0 1
-installChaincode 1 1
+
+echo "Installling chaincode on peer0.org2..."
 installChaincode 0 2
 
-# instantiate
-echo "upgrade  chaincode on peer0 org1"
-upgradeChaincode 0 1
+# upgrade chaincode on peer0.org2
+echo "upgrade chaincode on peer0.org2..."
+upgradeChaincode 0 2
 
-# querying
+# Query chaincode on peer0.org1
 echo "Querying chaincode on peer0.org1..."
 chaincodeQuery 0 1 100
 
@@ -44,13 +46,19 @@ chaincodeQuery 0 1 100
 echo "Sending invoke transaction on peer0.org1 peer0.org2..."
 chaincodeInvoke 0 1 0 2
 
-
-# Install chaincode on peer1 org2
+## Install chaincode on peer1.org2
+echo "Installing chaincode on peer1.org1 and peer1.org2..."
+installChaincode 1 1
 installChaincode 1 2
+
 
 # Query on chaincode on peer1.org2, check if the result is 90
 echo "Querying chaincode on peer1.org2..."
 chaincodeQuery 1 2 90
+
+# init chaincode
+echo "initialize chaincode on peer0.org2..."
+initchaincode 0 1 0 2
 
 echo
 echo "========= All GOOD, Upgrade chaincode and test completed =========== "

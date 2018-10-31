@@ -25,9 +25,9 @@ COUNTER=1
 MAX_RETRY=10
 
 # /opt/gopath/src/github.com/chaincode
-#CC_IHT_PATH="github.com/chaincode/go/app"
-CC_IHT_PATH="iht-fabric-chaincode-private/chaincode/go/app"
-CC_BYFN_PATH="fabric-network/chaincode/go/chaincode_example02/go/"
+# CC_IHT_PATH="iht-fabric-chaincode-private/chaincode/go/app"
+CC_BYFN_PATH="chaincode/app/verse"
+# CC_BYFN_PATH="chaincode/app/chaincode_example02/go"
 if [ "$LANGUAGE" = "node" ]; then
 	CC_BYFN_PATH="$GOPATH/src/fabric-network/chaincode/go/chaincode_example02/node/"
 fi
@@ -88,8 +88,8 @@ updateAnchorPeers 0 2
 
 ## Install chaincode on peer0.org1 and peer0.org2
 echo "Installing chaincode on peer0.org1..."
-#packageAndSign
 installChaincode 0 1
+
 echo "Installling chaincode on peer0.org2..."
 installChaincode 0 2
 
@@ -106,12 +106,18 @@ echo "Sending invoke transaction on peer0.org1 peer0.org2..."
 chaincodeInvoke 0 1 0 2
 
 ## Install chaincode on peer1.org2
-echo "Installing chaincode on peer1.org2..."
+echo "Installing chaincode on peer1.org1 and peer1.org2..."
+installChaincode 1 1
 installChaincode 1 2
+
 
 # Query on chaincode on peer1.org2, check if the result is 90
 echo "Querying chaincode on peer1.org2..."
 chaincodeQuery 1 2 90
+
+# init chaincode
+echo "initialize chaincode on peer0.org2..."
+initchaincode 0 1 0 2
 
 echo
 echo "========= All GOOD, BYFN execution completed =========== "

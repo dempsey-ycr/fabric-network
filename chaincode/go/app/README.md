@@ -1,1 +1,0 @@
-## IProperty(I Property). A project of IHT Private blockchain.
